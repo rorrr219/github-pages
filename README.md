@@ -1,4 +1,200 @@
-<header>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tabs button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            background-color: #e0e0e0;
+            cursor: pointer;
+        }
+
+        .tabs button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .clock {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .timer-input, .alarm-input {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        input {
+            padding: 5px;
+            width: 60px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tabs">
+            <button onclick="showTab('world-clock')" class="active">World Clock</button>
+            <button onclick="showTab('timer')">Timer</button>
+            <button onclick="showTab('stopwatch')">Stopwatch</button>
+            <button onclick="showTab('alarm')">Alarm</button>
+        </div>
+
+        <div id="world-clock" class="tab-content active">
+            <div class="clock" id="local-time"></div>
+            <div class="clock" id="utc-time"></div>
+        </div>
+
+        <div id="timer" class="tab-content">
+            <div class="timer-input">
+                <input type="number" id="hours" placeholder="HH" min="0">
+                <input type="number" id="minutes" placeholder="MM" min="0" max="59">
+                <input type="number" id="seconds" placeholder="SS" min="0" max="59">
+            </div>
+            <button onclick="startTimer()">Start Timer</button>
+            <div class="clock" id="timer-display">00:00:00</div>
+        </div>
+
+        <div id="stopwatch" class="tab-content">
+            <div class="clock" id="stopwatch-display">00:00:00</div>
+            <button onclick="startStopwatch()">Start</button>
+            <button onclick="stopStopwatch()">Stop</button>
+            <button onclick="resetStopwatch()">Reset</button>
+        </div>
+
+        <div id="alarm" class="tab-content">
+            <div class="alarm-input">
+                <input type="time" id="alarm-time">
+                <button onclick="setAlarm()">Set Alarm</button>
+            </div>
+            <div id="alarm-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Tab navigation
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tabs button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // World Clock
+        function updateClocks() {
+            const now = new Date();
+            document.getElementById('local-time').textContent = now.toLocaleTimeString();
+            document.getElementById('utc-time').textContent = now.toUTCString().split(' ')[4];
+        }
+        setInterval(updateClocks, 1000);
+
+        // Timer
+        let timerInterval;
+        function startTimer() {
+            const hours = parseInt(document.getElementById('hours').value) || 0;
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            
+            let totalSeconds = hours * 3600 + minutes * 60 + seconds;
+            
+            timerInterval = setInterval(() => {
+                totalSeconds--;
+                if (totalSeconds < 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!');
+                    return;
+                }
+                
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
+                
+                document.getElementById('timer-display').textContent = 
+                    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Stopwatch
+        let stopwatchInterval;
+        let stopwatchTime = 0;
+        function startStopwatch() {
+            stopwatchInterval = setInterval(() => {
+                stopwatchTime++;
+                const h = Math.floor(stopwatchTime / 3600);
+                const m = Math.floor((stopwatchTime % 3600) / 60);
+                const s = stopwatchTime % 60;
+                document.getElementById('stopwatch-display').textContent = 
+                    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopStopwatch() {
+            clearInterval(stopwatchInterval);
+        }
+
+        function resetStopwatch() {
+            stopwatchTime = 0;
+            document.getElementById('stopwatch-display').textContent = '00:00:00';
+        }
+
+        // Alarm
+        let alarmInterval;
+        function setAlarm() {
+            const alarmTime = document.getElementById('alarm-time').value;
+            const [alarmHours, alarmMinutes] = alarmTime.split(':');
+            
+            alarmInterval = setInterval(() => {
+                const now = new Date();
+                if (now.getHours() == alarmHours && now.getMinutes() == alarmMinutes) {
+                    alert('Alarm!');
+                    clearInterval(alarmInterval);
+                    document.getElementById('alarm-status').textContent = 'Alarm triggered!';
+                }
+            }, 1000);
+            
+            document.getElementById('alarm-status').textContent = `Alarm<header>
 
 <!--
   <<< Author notes: Course header >>>
